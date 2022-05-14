@@ -2,7 +2,6 @@ defmodule Properties do
   use Property
 
   # TODO: "when" clause
-  # TODO: struct as argument
 
   @type input :: integer()
 
@@ -12,17 +11,17 @@ defmodule Properties do
   end
 
   @type q :: integer()
-  property q(i, %{p: 2}), do: i * 2
+  property q(i, %Properties{p: 3}), do: i * 5
 
-  property q(i, %{p: p}), do: p * i
+  property q(i, %Properties{p: p}), do: p * i
 
   @type r :: integer()
-  property r(_, %{p: p, q: q, z: _z}) do
+  property r(_, %Properties{p: p, q: q, z: _z}) do
     p * q
   end
 
   @type z :: integer()
-  property z(_, %{q: q}) do
+  property z(_, %__MODULE__{q: q}) do
     q * 5
   end
 end

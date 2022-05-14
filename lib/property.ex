@@ -17,6 +17,7 @@ defmodule Property do
       import Property
       alias __MODULE__
       Module.register_attribute(__MODULE__, :property, accumulate: true)
+      Module.register_attribute(__MODULE__, :definition, accumulate: true)
       @before_compile Property
     end
   end
@@ -26,14 +27,14 @@ defmodule Property do
 
     quote do
       @property unquote(property)
-      def unquote(call), unquote(body)
+      @definition unquote(Macro.escape({call, body}))
     end
   end
 
   defp required_properties(ast) do
     case ast do
       {:%{}, _, props} -> Keyword.keys(props)
-      {:%, _, [{:__aliases__, _, [:Properties]}, map]} -> required_properties(map)
+      {:%, _, [_alias, map]} -> required_properties(map)
       {:=, _, args} -> Enum.flat_map(args, &required_properties/1)
       {:_, _, _} -> []
     end
@@ -43,6 +44,7 @@ defmodule Property do
     properties = Module.delete_attribute(module, :property)
     evaluation_order = evaluation_order(properties)
     names = properties |> Keyword.keys() |> Enum.uniq()
+    definitions = module |> Module.delete_attribute(:definition) |> Enum.reverse()
 
     quote do
       def evaluate(input) do
@@ -50,21 +52,9 @@ defmodule Property do
       end
 
       unquote(generate_type(names))
-      unquote(generate_specs(names))
       unquote(generate_struct(names))
-    end
-  end
-
-  defp generate_specs(names) do
-    specs =
-      for name <- names do
-        quote do
-          @spec unquote(name)(input(), t()) :: unquote(name)()
-        end
-      end
-
-    quote do
-      (unquote_splicing(specs))
+      unquote(generate_specs(names))
+      unquote(generate_defs(definitions))
     end
   end
 
@@ -89,7 +79,33 @@ defmodule Property do
     end
   end
 
-  def evaluation_order(properties) do
+  defp generate_specs(names) do
+    specs =
+      for name <- names do
+        quote do
+          @spec unquote(name)(input(), t()) :: unquote(name)()
+        end
+      end
+
+    quote do
+      unquote_splicing(specs)
+    end
+  end
+
+  defp generate_defs(definitions) do
+    defs =
+      for {call, body} <- definitions do
+        quote do
+          def unquote(call), unquote(body)
+        end
+      end
+
+    quote do
+      unquote_splicing(defs)
+    end
+  end
+
+  defp evaluation_order(properties) do
     graph =
       for {property, depends_on} <- properties,
           other_property <- depends_on,
@@ -105,13 +121,10 @@ defmodule Property do
   end
 
   def evaluate_in_order(module, properties, input) do
-    struct(
-      module,
-      for name <- properties, reduce: %{} do
-        it ->
-          value = apply(module, name, [input, it])
-          Map.put(it, name, value)
-      end
-    )
+    for name <- properties, reduce: struct(module) do
+      it ->
+        value = apply(module, name, [input, it])
+        Map.put(it, name, value)
+    end
   end
 end
