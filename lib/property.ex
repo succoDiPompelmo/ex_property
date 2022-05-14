@@ -1,0 +1,117 @@
+defmodule Property do
+  @moduledoc """
+  Documentation for `Property`.
+  """
+
+  defmodule LoopError do
+    defexception [:message]
+
+    @impl true
+    def exception(value) do
+      %LoopError{message: "loop found at #{inspect(value)}"}
+    end
+  end
+
+  defmacro __using__(_) do
+    quote do
+      import Property
+      alias __MODULE__
+      Module.register_attribute(__MODULE__, :property, accumulate: true)
+      @before_compile Property
+    end
+  end
+
+  defmacro property({name, _, [_input, props]} = call, body) do
+    property = {name, required_properties(props)}
+
+    quote do
+      @property unquote(property)
+      def unquote(call), unquote(body)
+    end
+  end
+
+  defp required_properties(ast) do
+    case ast do
+      {:%{}, _, props} -> Keyword.keys(props)
+      {:%, _, [{:__aliases__, _, [:Properties]}, map]} -> required_properties(map)
+      {:=, _, args} -> Enum.flat_map(args, &required_properties/1)
+      {:_, _, _} -> []
+    end
+  end
+
+  defmacro __before_compile__(%{module: module}) do
+    properties = Module.delete_attribute(module, :property)
+    evaluation_order = evaluation_order(properties)
+    names = properties |> Keyword.keys() |> Enum.uniq()
+
+    quote do
+      def evaluate(input) do
+        Property.evaluate_in_order(__MODULE__, unquote(evaluation_order), input)
+      end
+
+      unquote(generate_type(names))
+      unquote(generate_specs(names))
+      unquote(generate_struct(names))
+    end
+  end
+
+  defp generate_specs(names) do
+    specs =
+      for name <- names do
+        quote do
+          @spec unquote(name)(input(), t()) :: unquote(name)()
+        end
+      end
+
+    quote do
+      (unquote_splicing(specs))
+    end
+  end
+
+  # @type t :: %__MODULE__{
+  #         p: p(),
+  #         q: q(),
+  #         r: r()
+  #       }
+  defp generate_type(names) do
+    fields = Enum.map(names, &{_name = &1, {_type = &1, [], []}})
+    map = {:%{}, [], fields}
+    struct = {:%, [], [{:__MODULE__, [if_undefined: :apply], Elixir}, map]}
+
+    quote do
+      @type t :: unquote(struct)
+    end
+  end
+
+  defp generate_struct(names) do
+    quote do
+      defstruct unquote(names)
+    end
+  end
+
+  def evaluation_order(properties) do
+    graph =
+      for {property, depends_on} <- properties,
+          other_property <- depends_on,
+          reduce: Graph.new() do
+        g -> Graph.add_edge(g, other_property, property)
+      end
+
+    if Graph.is_cyclic?(graph) do
+      raise LoopError, Graph.loop_vertices(graph)
+    end
+
+    Graph.topsort(graph)
+  end
+
+  def evaluate_in_order(module, properties, input) do
+    struct(
+      module,
+      for name <- properties, reduce: %{} do
+        it ->
+          value = apply(module, name, [input, it])
+          Map.put(it, name, value)
+      end
+    )
+  end
+end
