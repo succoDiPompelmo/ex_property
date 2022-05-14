@@ -54,7 +54,8 @@ defmodule Property do
     definitions = module |> Module.delete_attribute(:definition) |> Enum.reverse()
 
     quote do
-      def evaluate(input) do
+      @spec new(input()) :: t()
+      def new(input) do
         Property.evaluate_in_order(__MODULE__, unquote(evaluation_order), input)
       end
 
