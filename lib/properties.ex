@@ -3,8 +3,6 @@ defmodule Properties do
 
   use Property
 
-  # TODO: DynamicStruct
-
   @type input :: integer()
 
   @type p :: integer()

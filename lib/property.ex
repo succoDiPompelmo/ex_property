@@ -31,6 +31,7 @@ defmodule Property do
     end
   end
 
+  @spec name_and_required_properties(Macro.t()) :: {atom, [atom]}
   defp name_and_required_properties(ast) do
     case ast do
       {:when, _, [call, _guard]} -> name_and_required_properties(call)
@@ -38,6 +39,7 @@ defmodule Property do
     end
   end
 
+  @spec required_properties(Macro.t()) :: [atom]
   defp required_properties(ast) do
     case ast do
       {:%{}, _, props} -> Keyword.keys(props)
@@ -71,6 +73,7 @@ defmodule Property do
   #         q: q(),
   #         r: r()
   #       }
+  @spec generate_type([atom]) :: Macro.t()
   defp generate_type(names) do
     fields = Enum.map(names, &{_name = &1, {_type = &1, [], []}})
     map = {:%{}, [], fields}
@@ -81,12 +84,14 @@ defmodule Property do
     end
   end
 
+  @spec generate_struct([atom]) :: Macro.t()
   defp generate_struct(names) do
     quote do
       defstruct unquote(names)
     end
   end
 
+  @spec generate_specs([atom]) :: Macro.t()
   defp generate_specs(names) do
     specs =
       for name <- names do
@@ -100,6 +105,7 @@ defmodule Property do
     end
   end
 
+  @spec generate_defs([{Macro.t(), Macro.t()}]) :: Macro.t()
   defp generate_defs(definitions) do
     defs =
       for {call, body} <- definitions do
@@ -113,6 +119,7 @@ defmodule Property do
     end
   end
 
+  @spec building_order([{atom, [atom]}]) :: [atom]
   defp building_order(properties) do
     graph =
       for {property, depends_on} <- properties,
