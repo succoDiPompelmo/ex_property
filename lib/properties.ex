@@ -1,4 +1,6 @@
 defmodule Properties do
+  @moduledoc "Example module"
+
   use Property
 
   # TODO: DynamicStruct
