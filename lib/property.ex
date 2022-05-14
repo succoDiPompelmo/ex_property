@@ -49,14 +49,14 @@ defmodule Property do
 
   defmacro __before_compile__(%{module: module}) do
     properties = Module.delete_attribute(module, :property)
-    evaluation_order = evaluation_order(properties)
+    building_order = building_order(properties)
     names = properties |> Keyword.keys() |> Enum.uniq()
     definitions = module |> Module.delete_attribute(:definition) |> Enum.reverse()
 
     quote do
       @spec new(input()) :: t()
       def new(input) do
-        Property.evaluate_in_order(__MODULE__, unquote(evaluation_order), input)
+        Property.build(__MODULE__, unquote(building_order), input)
       end
 
       unquote(generate_type(names))
@@ -113,7 +113,7 @@ defmodule Property do
     end
   end
 
-  defp evaluation_order(properties) do
+  defp building_order(properties) do
     graph =
       for {property, depends_on} <- properties,
           other_property <- depends_on,
@@ -128,7 +128,8 @@ defmodule Property do
     Graph.topsort(graph)
   end
 
-  def evaluate_in_order(module, properties, input) do
+  @spec build(module(), [atom()], any) :: struct()
+  def build(module, properties, input) do
     for name <- properties, reduce: struct(module) do
       it ->
         value = apply(module, name, [input, it])
