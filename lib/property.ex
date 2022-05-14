@@ -22,12 +22,19 @@ defmodule Property do
     end
   end
 
-  defmacro property({name, _, [_input, props]} = call, body) do
-    property = {name, required_properties(props)}
+  defmacro property(call, body) do
+    property = name_and_required_properties(call)
 
     quote do
       @property unquote(property)
       @definition unquote(Macro.escape({call, body}))
+    end
+  end
+
+  defp name_and_required_properties(ast) do
+    case ast do
+      {:when, _, [call, _guard]} -> name_and_required_properties(call)
+      {name, _, [_input, props]} -> {name, required_properties(props)}
     end
   end
 
@@ -88,7 +95,7 @@ defmodule Property do
       end
 
     quote do
-      unquote_splicing(specs)
+      (unquote_splicing(specs))
     end
   end
 
@@ -101,7 +108,7 @@ defmodule Property do
       end
 
     quote do
-      unquote_splicing(defs)
+      (unquote_splicing(defs))
     end
   end
 

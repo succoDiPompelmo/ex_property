@@ -1,8 +1,6 @@
 defmodule Properties do
   use Property
 
-  # TODO: "when" clause
-
   @type input :: integer()
 
   @type p :: integer()
@@ -12,6 +10,8 @@ defmodule Properties do
 
   @type q :: integer()
   property q(i, %Properties{p: 3}), do: i * 5
+
+  property q(i, %Properties{p: p}) when p > 0, do: i * 5
 
   property q(i, %Properties{p: p}), do: p * i
 
