@@ -13,6 +13,7 @@ defmodule Property do
   end
 
   defmacro __using__(_) do
+    IO.puts("using property")
     quote do
       import Property
       alias __MODULE__
@@ -24,7 +25,6 @@ defmodule Property do
 
   defmacro property(call, body) do
     property = name_and_required_properties(call)
-
     quote do
       @property unquote(property)
       @definition unquote(Macro.escape({call, body}))
@@ -50,7 +50,8 @@ defmodule Property do
   end
 
   defmacro __before_compile__(%{module: module}) do
-    properties = Module.delete_attribute(module, :property)
+    IO.puts("before compile property (#{module})")
+    properties = Module.get_attribute(module, :property)
     building_order = building_order(properties)
     names = properties |> Keyword.keys() |> Enum.uniq()
     definitions = module |> Module.delete_attribute(:definition) |> Enum.reverse()
@@ -60,6 +61,8 @@ defmodule Property do
       def new(input) do
         Property.build(__MODULE__, unquote(building_order), input)
       end
+
+      def properties, do: unquote(properties)
 
       unquote(generate_type(names))
       unquote(generate_struct(names))

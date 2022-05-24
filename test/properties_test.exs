@@ -1,7 +1,11 @@
 defmodule PropertiesTest do
   use ExUnit.Case
 
-  test "greets the world" do
-    assert %Properties{q: 10} = Properties.new(2) |> IO.inspect(label: :result)
+  # test "calculating properties from input" do
+  #   assert %{q: 10} = Example.new(2) |> IO.inspect(label: :result)
+  # end
+
+  test "calculating properties from multiple modules" do
+    assert %{q: 10} = Example.Props.new(2) |> IO.inspect(label: :result)
   end
 end
