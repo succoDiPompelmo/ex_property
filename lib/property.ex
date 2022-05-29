@@ -3,7 +3,7 @@ defmodule Property do
   Documentation for `Property`.
   """
 
-  alias PropertiesGraph.LoopError
+  alias PropertiesGraph.Graph
 
   defmacro __using__(_) do
     IO.puts("using property")
@@ -45,7 +45,7 @@ defmodule Property do
   defmacro __before_compile__(%{module: module}) do
     IO.puts("before compile property (#{module})")
     properties = Module.get_attribute(module, :property)
-    building_order = building_order(properties)
+    building_order = Graph.building_order(properties)
     names = properties |> Keyword.keys() |> Enum.uniq()
     definitions = module |> Module.delete_attribute(:definition) |> Enum.reverse()
 
@@ -113,22 +113,6 @@ defmodule Property do
     quote do
       (unquote_splicing(defs))
     end
-  end
-
-  @spec building_order([{atom, [atom]}]) :: [atom]
-  defp building_order(properties) do
-    graph =
-      for {property, depends_on} <- properties,
-          other_property <- depends_on,
-          reduce: Graph.new() do
-        g -> Graph.add_edge(g, other_property, property)
-      end
-
-    if Graph.is_cyclic?(graph) do
-      raise LoopError, Graph.loop_vertices(graph)
-    end
-
-    Graph.topsort(graph)
   end
 
   @spec build(module(), [atom()], any) :: struct()

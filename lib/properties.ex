@@ -1,6 +1,6 @@
 defmodule Properties do
 
-  alias PropertiesGraph.LoopError
+  alias PropertiesGraph.Graph
 
   defmodule DuplicatedPropertyError do
     defexception [:message]
@@ -35,7 +35,7 @@ defmodule Properties do
       end
     end
 
-    building_order = building_order(properties)
+    building_order = Graph.building_order(properties)
 
     quote do
       @spec new(input()) :: map()
@@ -60,26 +60,6 @@ defmodule Properties do
 
       {prop, deps}
     end
-  end
-
-  defp building_order(properties) do
-    graph =
-      for {property, _} <- properties, reduce: Graph.new() do
-        g -> Graph.add_vertex(g, property)
-      end
-
-    graph =
-      for {property, depends_on} <- properties,
-          other_property <- depends_on,
-          reduce: graph do
-        g -> Graph.add_edge(g, other_property, property)
-      end
-
-    if Graph.is_cyclic?(graph) do
-      raise LoopError, Graph.loop_vertices(graph)
-    end
-
-    Graph.topsort(graph)
   end
 
   #@spec build(module(), [atom()], any) :: struct()
