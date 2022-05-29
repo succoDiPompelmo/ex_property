@@ -3,14 +3,7 @@ defmodule Property do
   Documentation for `Property`.
   """
 
-  defmodule LoopError do
-    defexception [:message]
-
-    @impl true
-    def exception(value) do
-      %LoopError{message: "loop found at #{inspect(value)}"}
-    end
-  end
+  alias PropertiesGraph.LoopError
 
   defmacro __using__(_) do
     IO.puts("using property")

@@ -1,19 +1,13 @@
 defmodule Properties do
+
+  alias PropertiesGraph.LoopError
+
   defmodule DuplicatedPropertyError do
     defexception [:message]
 
     @impl true
     def exception(value) do
       %DuplicatedPropertyError{message: "the property #{value} is duplicated"}
-    end
-  end
-
-  defmodule LoopError do
-    defexception [:message]
-
-    @impl true
-    def exception(value) do
-      %LoopError{message: "loop found at #{inspect(value)}"}
     end
   end
 
