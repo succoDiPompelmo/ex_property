@@ -24,3 +24,6 @@ defproperty-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+# Output DOT files
+*.dot

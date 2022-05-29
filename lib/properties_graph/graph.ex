@@ -21,7 +21,15 @@ defmodule PropertiesGraph.Graph do
       raise LoopError, Graph.loop_vertices(graph)
     end
 
+    dot_output(graph)
+
     Graph.topsort(graph)
+  end
+
+  defp dot_output(graph) do
+    {:ok, dot_graph} = Graph.Serializers.DOT.serialize(graph)
+
+    File.write!("graph.dot", dot_graph)
   end
 
 end
