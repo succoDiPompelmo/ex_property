@@ -45,7 +45,7 @@ defmodule Property do
   defmacro __before_compile__(%{module: module}) do
     IO.puts("before compile property (#{module})")
     properties = Module.get_attribute(module, :property)
-    building_order = Graph.building_order(properties)
+    building_order = Graph.building_order(properties, module)
     names = properties |> Keyword.keys() |> Enum.uniq()
     definitions = module |> Module.delete_attribute(:definition) |> Enum.reverse()
 

@@ -2,8 +2,8 @@ defmodule PropertiesGraph.Graph do
 
   alias PropertiesGraph.LoopError
 
-  @spec building_order([{atom, [atom]}]) :: [atom]
-  def building_order(properties) do
+  @spec building_order([{atom, [atom]}], module()) :: [atom]
+  def building_order(properties, module) do
 
     graph =
       for {property, _} <- properties, reduce: Graph.new() do
@@ -21,15 +21,15 @@ defmodule PropertiesGraph.Graph do
       raise LoopError, Graph.loop_vertices(graph)
     end
 
-    dot_output(graph)
+    dot_output(graph, module)
 
     Graph.topsort(graph)
   end
 
-  defp dot_output(graph) do
+  defp dot_output(graph, module) do
     {:ok, dot_graph} = Graph.Serializers.DOT.serialize(graph)
 
-    File.write!("graph.dot", dot_graph)
+    File.write!("#{module}.dot", dot_graph)
   end
 
 end

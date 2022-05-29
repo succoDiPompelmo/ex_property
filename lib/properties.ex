@@ -35,7 +35,7 @@ defmodule Properties do
       end
     end
 
-    building_order = Graph.building_order(properties)
+    building_order = Graph.building_order(properties, module)
 
     quote do
       @spec new(input()) :: map()
