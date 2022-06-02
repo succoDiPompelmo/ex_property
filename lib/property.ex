@@ -45,6 +45,8 @@ defmodule Property do
   defmacro __before_compile__(%{module: module}) do
     IO.puts("before compile property (#{module})")
     properties = Module.get_attribute(module, :property)
+    context = Module.get_attribute(module, :context)
+    IO.inspect(context)
     building_order = Graph.building_order(properties, module)
     names = properties |> Keyword.keys() |> Enum.uniq()
     definitions = module |> Module.delete_attribute(:definition) |> Enum.reverse()
@@ -89,12 +91,17 @@ defmodule Property do
 
   @spec generate_specs([atom]) :: Macro.t()
   defp generate_specs(names) do
+
+    a = {{:., [], [{:__aliases__, [alias: false], [:Example, :Props]}, :properties]}, [], []}
+
     specs =
       for name <- names do
         quote do
-          @spec unquote(name)(input(), t()) :: unquote(name)()
+          @spec unquote(name)(input(), unquote(a)) :: unquote(name)()
         end
       end
+
+    IO.inspect(specs)
 
     quote do
       (unquote_splicing(specs))
