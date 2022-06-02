@@ -1,7 +1,9 @@
 defmodule Example.Bar do
   @moduledoc false
 
-  use Property, context: Example.Props
+  use Property
+
+  @context Example.Props
 
   @type input :: integer()
 

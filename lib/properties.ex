@@ -25,7 +25,7 @@ defmodule Properties do
     modules = Module.get_attribute(module, :modules, [])
 
     # fetch all properties
-    properties = resolve_properties(modules) |> IO.inspect(label: "result")
+    properties = resolve_properties(modules)
 
     #  ensure not duplicated properties
     for {name, [{mod, _, _} | _] = mods} <-
@@ -42,6 +42,25 @@ defmodule Properties do
       def new(input) do
         Properties.build(unquote(building_order), input)
       end
+
+      unquote(generate_specs(properties))
+    end
+  end
+
+  defp generate_specs(properties) do
+    fields = Enum.map(properties, fn {{module_name, property_name}, _} ->
+      split_module = String.split(Atom.to_string(module_name), ".")
+        |> Enum.drop(1)
+        |> Enum.map(&String.to_atom/1)
+      {_name = property_name, {{:., [], [{
+        :__aliases__, [alias: false], split_module}, property_name]
+      }, [], []}}
+    end)
+    map = {:%{}, [], fields}
+    # struct = {:%, [], [{:__MODULE__, [if_undefined: :apply], Elixir}, map]}
+
+    quote do
+      @type properties :: unquote(map)
     end
   end
 
