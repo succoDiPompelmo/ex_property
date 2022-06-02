@@ -61,7 +61,6 @@ defmodule Property do
 
       unquote(generate_type(names))
       unquote(generate_struct(names))
-      unquote(generate_specs(names))
       unquote(generate_defs(definitions))
     end
   end
@@ -86,25 +85,6 @@ defmodule Property do
   defp generate_struct(names) do
     quote do
       defstruct unquote(names)
-    end
-  end
-
-  @spec generate_specs([atom]) :: Macro.t()
-  defp generate_specs(names) do
-
-    a = {{:., [], [{:__aliases__, [alias: false], [:Example, :Props]}, :properties]}, [], []}
-
-    specs =
-      for name <- names do
-        quote do
-          @spec unquote(name)(input(), unquote(a)) :: unquote(name)()
-        end
-      end
-
-    IO.inspect(specs)
-
-    quote do
-      (unquote_splicing(specs))
     end
   end
 
