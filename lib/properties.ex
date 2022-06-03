@@ -65,7 +65,7 @@ defmodule Properties do
   defp split_module(module_name) do
     module_name
       |> Atom.to_string()
-      |> String.split()
+      |> String.split(".")
       |> Enum.drop(1)
       |> Enum.map(&String.to_atom/1)
   end

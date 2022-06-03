@@ -3,8 +3,6 @@ defmodule Example.Bar do
 
   use Property
 
-  @context Example.Props
-
   @type input :: integer()
 
   @type color :: :red
