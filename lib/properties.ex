@@ -48,20 +48,26 @@ defmodule Properties do
   end
 
   defp generate_specs(properties) do
-    fields = Enum.map(properties, fn {{module_name, property_name}, _} ->
-      split_module = String.split(Atom.to_string(module_name), ".")
-        |> Enum.drop(1)
-        |> Enum.map(&String.to_atom/1)
-      {_name = property_name, {{:., [], [{
-        :__aliases__, [alias: false], split_module}, property_name]
-      }, [], []}}
-    end)
+    fields =
+      properties
+      |> Enum.uniq_by(fn {{_, property_name}, _} -> property_name end)
+      |> Enum.map(fn {{module_name, property_name}, _} ->
+        {_name = property_name, {{:., [], [{:__aliases__, [alias: false], split_module(module_name)}, property_name]}, [], []}}
+      end)
     map = {:%{}, [], fields}
-    # struct = {:%, [], [{:__MODULE__, [if_undefined: :apply], Elixir}, map]}
 
     quote do
       @type properties :: unquote(map)
     end
+  end
+
+  @spec split_module(atom()) :: [atom()]
+  defp split_module(module_name) do
+    module_name
+      |> Atom.to_string()
+      |> String.split()
+      |> Enum.drop(1)
+      |> Enum.map(&String.to_atom/1)
   end
 
   defp resolve_properties(modules) do
@@ -81,7 +87,6 @@ defmodule Properties do
     end
   end
 
-  #@spec build(module(), [atom()], any) :: struct()
   def build(properties, input) do
     for {mod, name} <- properties, reduce: %{} do
       it ->
